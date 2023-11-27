@@ -140,8 +140,6 @@ public class OperatorFirstAnalyzer {
         builder.append(String.format("%-14s", "分析栈"));
         builder.append(String.format("%20s", "待分析栈"));
         builder.append("\t所用表达式\n");
-        builder.append(String.format("%-20s", S.stream().limit(k + 1).reduce((result, element) -> result + element).get()));
-        builder.append(String.format("%20s\n", sentence.substring(sentenceIndex)));
         do {
 
             a = String.valueOf(sentence.charAt(sentenceIndex++));
@@ -151,11 +149,12 @@ public class OperatorFirstAnalyzer {
             } else {
                 j = k - 1;
             }
+
             // 已分析栈终结符优先级更大，规约
             while (priorityTable.get(S.get(j), a).equals(">")) {
                 // Print
                 builder.append(String.format("%-20s", S.stream().limit(k + 1).reduce((result, element) -> result + element).get()));
-                builder.append(String.format("%20s", sentence.substring(sentenceIndex)));
+                builder.append(String.format("%20s", sentence.substring(sentenceIndex - 1)));
                 do {
                     // Q 为记忆的分析栈中的最后终结符
                     Q = S.get(j);
@@ -185,12 +184,18 @@ public class OperatorFirstAnalyzer {
                 k = j + 1;
                 S.set(k, "N");
             }
+            builder.append(String.format("%-20s", S.stream().limit(k + 1).reduce((result, element) -> result + element).get()));
+            builder.append(String.format("%20s", sentence.substring(sentenceIndex - 1)));
+            builder.append("\t").append("移进").append("\n");
+
+
             if (priorityTable.get(S.get(j), a).equals("<") || priorityTable.get(S.get(j), a).equals("=")) {
                 k = k + 1;
                 S.set(k, a);
             } else {
                 throw new Exception(String.format("Invalid sentence: \"%s\"", sentence));
             }
+
         } while (!a.equals("#"));
         builder.append(String.format("%-20s", S.stream().limit(k + 1).reduce((result, element) -> result + element).get()));
         builder.append(String.format("%20s\n", sentenceIndex == sentence.length() ? "" : sentence.substring(sentenceIndex)));
