@@ -92,17 +92,17 @@ public class LRAnalyzer {
         for (int k = 0; k < C.size(); k++) {
             List<Project> Ik = C.get(k);
             for (Project project : Ik) {
-                // (3)
+                // (3) W -> W• 则 置acc 接受
                 if (project.getLeft().equals("W") && !project.hasNextSymbol()) {
                     analysisTable.setAction(k, "#", "acc", -1);
                     continue;
                 }
-                // (1)
+                // (1) A -> α•aβ 则 置sj 移进
                 if (project.hasNextSymbol() && !project.hasNonSymbolAfterDot(nonTerSymbolSet) && C.contains(GO(Ik, project.getNextSymbol()))) {
                     int j = C.indexOf(GO(Ik, project.getNextSymbol()));
                     analysisTable.setAction(k, project.getNextSymbol(), "s", j);
                 }
-                // (2)
+                // (2) A -> α• 则 置rj 规约
                 if (!project.hasNextSymbol()) {
                     for (String a : analysisTable.getTerSymbols()) {
                         analysisTable.setAction(k, a, "r", analysisTable.getFormulas().indexOf(new Pair<>(project.getLeft(), project.getRights())));
