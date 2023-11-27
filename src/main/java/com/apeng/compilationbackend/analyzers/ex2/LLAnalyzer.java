@@ -75,6 +75,7 @@ public class LLAnalyzer {
         initAnalyzingTable();
         generateAnalyzingTable();
 
+        // 预测分析程序 P77
         Stack<String> stack = new Stack<>();
         stack.push("#");
         stack.push(startSymbol);
@@ -122,13 +123,13 @@ public class LLAnalyzer {
         for (Map.Entry<String, Set<String>> entry : formulaSetMap.entrySet()) {
             String left = entry.getKey();
             Set<String> rights = entry.getValue();
-            // 对于文法每个产生式
+            // 对于文法每个产生式 left -> right
             for (String right : rights) {
-                // (2)
+                // (2) 计算 right 的 FIRST 集，对 FIRST 集中的每个终结符，都需要将其加入对应的表项中
                 for (String firstSymbol : getFirstSet(right)) {
                     analyzingTable.get(left).get(firstSymbol).add(right);
                 }
-                // (3)
+                // (3) 如果 right 的 FIRST 集含有 ε，求 left 的 FOLLOW 集， 得到终结符，将表达式加入到对应表项中
                 if (getFirstSet(right).contains("ε")) {
                     for (String followSymbol : followSetMap.get(left)) {
                         analyzingTable.get(left).get(followSymbol).add(right);
@@ -157,12 +158,13 @@ public class LLAnalyzer {
             for (Map.Entry<String, Set<String>> formula : formulaSetMap.entrySet()) {
                 String left = formula.getKey();
                 Set<String> rights = formula.getValue();
-                // (1)
+                // (1) 对于开始符号，置 "#"
                 if (startSymbol.equals(left)) {
                     dirty = try2add("#", followSetMap.get(left)) || dirty;
                 }
+                // 遍历产生式
                 for (String right : rights) {
-                    // (2)
+                    // (2) 若 A -> αBβ 是一个产生式，则把 FIRST(β) \ ε 加入 FIRST(B) 中
                     for (int i = 0; i < right.length() - 1; i ++) {
                         if (nonTerSymbolSet.contains(right.substring(i, i + 1))) {
                             Set<String> toAdd = getFirstSet(right.substring(i + 1));
@@ -171,7 +173,7 @@ public class LLAnalyzer {
                                 dirty = try2add(str, followSetMap.get(right.substring(i, i + 1))) || dirty;
                             }
                         }
-
+                        // 若 A -> αBβ 是一个产生式，并且 β 的 FIRST 含有 ε， 则把 FOLLOW(A) 加入 FOLLOW(B) 中
                         if (nonTerSymbolSet.contains(right.substring(i, i + 1)) && getFirstSet(right.substring(i + 1)).contains("ε")) {
                             Set<String> toAdd = followSetMap.get(left);
                             for (String str : toAdd) {
@@ -180,7 +182,7 @@ public class LLAnalyzer {
                         }
 
                     }
-                    // (3)
+                    // (3) 若 A -> αB 是一个产生式，则把 FOLLOW(A) 加至 FOLLOW(B) 中
                     if (nonTerSymbolSet.contains(right.substring(right.length() - 1))) {
                         Set<String> toAdd = followSetMap.get(left);
                         for (String str : toAdd) {
@@ -193,9 +195,12 @@ public class LLAnalyzer {
     }
 
     private Set<String> getFirstSet(String symbolStr){
+        // ε的 FIRST 为 ε
         if (symbolStr.equals("ε")) return new HashSet<>(Collections.singleton("ε"));
+        // 先加入首个符号的 FIRST，并移除 ε
         Set<String> resultSet = new HashSet<>(firstSetMap.get(symbolStr.substring(0, 1)));
         resultSet.remove("ε");
+        // 逐渐延长右部，加入 FIRST
         for (int i = 1; i < symbolStr.length(); i++) {
             if (isAllContainsE(symbolStr.substring(0, i))) {
                 Set<String> copySet = new HashSet<>(firstSetMap.get(symbolStr.substring(i, i + 1)));
@@ -203,6 +208,7 @@ public class LLAnalyzer {
                 resultSet.addAll(copySet);
             }
         }
+        // 特别地，如果全含有ε，加入ε
         if (isAllContainsE(symbolStr)) {
             resultSet.add("ε");
         }
@@ -242,6 +248,7 @@ public class LLAnalyzer {
                     }
                     // 则把 FIRST(Y) 中的所有非 e 元素都加到 FIRST(X) 中
                     for (int last = 1; last < right.length(); last++) {
+                        // subString逐渐向右延长
                         String subString = right.substring(0, last);
                         if (isAllNoneTerminal(subString) && isAllContainsE(subString)) {
                             Set<String> firstSet = firstSetMap.get(right.substring(last));
@@ -250,7 +257,7 @@ public class LLAnalyzer {
                             }
                         }
                     }
-                    // 特别是...
+                    // 特别是... 如果右部Y1Y2..的FIRST均含有ε，则将ε加入左部符号的FIRST集
                     if (isAllNoneTerminal(right) && isAllContainsE(right)) {
                         dirty = try2add("ε", firstSetMap.get(left)) || dirty;
                     }

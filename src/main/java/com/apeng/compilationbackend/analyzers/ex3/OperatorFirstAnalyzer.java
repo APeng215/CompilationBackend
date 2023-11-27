@@ -316,7 +316,7 @@ public class OperatorFirstAnalyzer {
             String left = entry.getKey();
             Set<String> rights = entry.getValue();
             // “开始时，按照上述规则（1）对每个数组元素F[P, a]赋初值”
-            // Iterate formulas
+            // Iterate formulas 遍历产生式
             for (String right : rights) {
                 String head = right.substring(0, 1);
                 String second = null;
