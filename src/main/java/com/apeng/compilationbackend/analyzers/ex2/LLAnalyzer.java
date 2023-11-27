@@ -11,6 +11,24 @@ public class LLAnalyzer {
     private final HashMap<String, Set<String>> firstSetMap = new HashMap<>();// FIRST集
     private final HashMap<String, Set<String>> followSetMap = new HashMap<>();// FOLLOW集
     private final HashMap<String, HashMap<String, ArrayList<String>>> analyzingTable = new HashMap<>();
+    public String getAnalyzingTableStr() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("终结符\t").append("预测(非终结符 -> 产生式)\t\n");
+        for (Map.Entry<String, HashMap<String, ArrayList<String>>> entry : analyzingTable.entrySet()) {
+            String nonTerSymbol = entry.getKey();
+            builder.append(nonTerSymbol).append("\t\t");
+            for (Map.Entry<String, ArrayList<String>> terAndCellPair : entry.getValue().entrySet()) {
+                String terSymbol = terAndCellPair.getKey();
+                if (!terAndCellPair.getValue().isEmpty()) {
+                    String cell = terAndCellPair.getValue().get(0);
+                    builder.append(terSymbol).append(" -> ").append(cell).append("\t\t");
+                }
+            }
+            builder.append("\n");
+        }
+
+        return builder.toString().trim();
+    }
     private String sentence;
     private final String content;
     private final AnalysisResult analysisResult = new AnalysisResult();
@@ -198,17 +216,17 @@ public class LLAnalyzer {
             for (Map.Entry<String, Set<String>> formula : formulaSetMap.entrySet()) {
                 String left = formula.getKey();
                 Set<String> rights = formula.getValue();
-                // (1)
+                // (1) 终结符的 FIRST 为其本身
                 if (terSymbolSet.contains(left)) {
                     dirty = try2add(left, firstSetMap.get(left)) || dirty;
-                } else { // (2)
+                } else { // (2) 如果是非终结符
                     for (String right : rights) {
                         for (String terSymbol : terSymbolSet) {
-                            if (Objects.equals(terSymbol, right.substring(0, 1))) {
+                            if (Objects.equals(terSymbol, right.substring(0, 1))) { // 如果开头是终结符，则此终结符加入 FIRST
                                 dirty = try2add(terSymbol, firstSetMap.get(left)) || dirty;
                                 break;
                             }
-                        }
+                        } // 如果有X->ε, 将ε加入X的FIRST集
                         if (Objects.equals(right, "ε")) {
                             dirty = try2add(right, firstSetMap.get(left)) || dirty;
                         }
@@ -216,6 +234,7 @@ public class LLAnalyzer {
                 }
                 // (3)
                 for (String right : rights) {
+                    // 形如 X->Y... 将 FIRST(Y)中所有非ε反向加入FIRST(X)中
                     if (nonTerSymbolSet.contains(right.substring(0, 1))) {
                         for (String first : firstSetMap.get(right.substring(0, 1))) {
                             if (!Objects.equals(first, "ε")) dirty = try2add(first, firstSetMap.get(left)) || dirty;
@@ -325,3 +344,4 @@ public class LLAnalyzer {
     }
 
 }
+
